@@ -5,7 +5,9 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -19,8 +21,17 @@ import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
 
+import com.example.datagatheringv3.BroadReceieve.transitionReceiver;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.ActivityTransition;
+import com.google.android.gms.location.ActivityTransitionRequest;
+import com.google.android.gms.location.DetectedActivity;
+import com.google.android.gms.tasks.Task;
+
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -29,6 +40,11 @@ public class foregroundWorkCaller extends Service {
     private static final String WORK_LIGHT_ID = "LIGHT_WORKER";
     private static final String WORK_STEPS_ID = "STEPS_WORKER";
     private static final String WORK_GYRO_ID = "GYRO_WORKER";
+    private transitionReceiver broadcastReceiver;
+    private List<ActivityTransition> activityTransitionList;
+    private final String TRANSITIONS_RECEIVER_ACTION =
+            BuildConfig.APPLICATION_ID + "TRANSITIONS_RECEIVER_ACTION";
+    private PendingIntent pendingIntentForActivityListener;
 
     @Override
     public void onCreate() {
@@ -40,6 +56,7 @@ public class foregroundWorkCaller extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
         Log.d("OnStartCommand","Foreground Starting");
         Intent intent1=new Intent(this,AccelWorker.class);
         //SecondWorker
@@ -56,7 +73,20 @@ public class foregroundWorkCaller extends Service {
                 .build();
         startForeground(1,notif);
 
+        broadcastReceiver=new transitionReceiver();
+        startReceiverForActivityListener();
+        activityTransitionList = new ArrayList<>();
+        addActivitiesList();
+        Intent intent4 = new Intent(TRANSITIONS_RECEIVER_ACTION);
+        pendingIntentForActivityListener =
+                PendingIntent.getBroadcast(foregroundWorkCaller.this, 0, intent4, 0);
         startWorker();
+        ActivityTransitionRequest request = new ActivityTransitionRequest(activityTransitionList);
+        Task<Void> task =
+                ActivityRecognition.getClient(this)
+                        .requestActivityTransitionUpdates(request, pendingIntentForActivityListener);
+
+
 
         return START_STICKY;
 
@@ -64,7 +94,35 @@ public class foregroundWorkCaller extends Service {
 
 
     }
+    public void addActivitiesList()
+    {
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.WALKING)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.WALKING)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                .build());
+        activityTransitionList.add(new ActivityTransition.Builder()
+                .setActivityType(DetectedActivity.STILL)
+                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                .build());
+    }
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(broadcastReceiver);
+        super.onDestroy();
+    }
 
+    public void startReceiverForActivityListener()
+    {
+        registerReceiver(broadcastReceiver,new IntentFilter(TRANSITIONS_RECEIVER_ACTION));
+    }
     public void createWorkRequest()
     {
         Log.d("Work Request","Creating Work Request");
