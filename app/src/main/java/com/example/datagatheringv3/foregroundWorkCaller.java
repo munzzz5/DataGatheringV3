@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 public class foregroundWorkCaller extends Service {
     private static final String WORK_ACCEL_ID = "ACCELEROMETER_WORKER";
     private static final String WORK_LIGHT_ID = "LIGHT_WORKER";
+    private static final String WORK_STEPS_ID = "STEPS_WORKER";
+    private static final String WORK_GYRO_ID = "GYRO_WORKER";
 
     @Override
     public void onCreate() {
@@ -66,16 +68,23 @@ public class foregroundWorkCaller extends Service {
     public void createWorkRequest()
     {
         Log.d("Work Request","Creating Work Request");
-        PeriodicWorkRequest periodicWorkRequest=new PeriodicWorkRequest.Builder
-                (AccelWorker.class,15,TimeUnit.MINUTES)
-                .setInitialDelay(1000,TimeUnit.MILLISECONDS)
+        PeriodicWorkRequest periodicWorkRequest=new PeriodicWorkRequest.Builder(AccelWorker.class,15,TimeUnit.MINUTES)
+                .setInitialDelay(500,TimeUnit.MILLISECONDS)
                 .build();
         //SecondWorker
         PeriodicWorkRequest periodicWorkRequest1=new PeriodicWorkRequest.Builder(LightWorker.class,15,TimeUnit.MINUTES)
-                .setInitialDelay(1000,TimeUnit.MILLISECONDS)
+                .setInitialDelay(3000,TimeUnit.MILLISECONDS)
+                .build();
+//        PeriodicWorkRequest periodicWorkRequest2=new PeriodicWorkRequest.Builder(stepCountWorker.class,15,TimeUnit.MINUTES)
+//                .setInitialDelay(6000,TimeUnit.MILLISECONDS)
+//                .build();
+        PeriodicWorkRequest periodicWorkRequest3=new PeriodicWorkRequest.Builder(gyroWorker.class,15,TimeUnit.MINUTES)
+                .setInitialDelay(9000,TimeUnit.MILLISECONDS)
                 .build();
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(WORK_ACCEL_ID, ExistingPeriodicWorkPolicy.REPLACE,periodicWorkRequest);
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(WORK_LIGHT_ID, ExistingPeriodicWorkPolicy.REPLACE,periodicWorkRequest1);
+        //WorkManager.getInstance(this).enqueueUniquePeriodicWork(WORK_STEPS_ID, ExistingPeriodicWorkPolicy.REPLACE,periodicWorkRequest2);
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(WORK_GYRO_ID, ExistingPeriodicWorkPolicy.REPLACE,periodicWorkRequest3);
     }
 
     public void startWorker(){
