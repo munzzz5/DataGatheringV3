@@ -19,7 +19,7 @@ public class AccelWorker extends Worker implements SensorEventListener {
     long timeStarted;
 
     StringBuilder sb;
-    public static final long SENSOR_EXECUTION_PERIOD=7000;
+    public static final long SENSOR_EXECUTION_PERIOD=5000;
     public AccelWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
 
         super(context, workerParams);

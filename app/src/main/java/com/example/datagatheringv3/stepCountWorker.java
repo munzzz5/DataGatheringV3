@@ -31,6 +31,7 @@ public class stepCountWorker extends Worker implements SensorEventListener {
     @NonNull
     @Override
     public ListenableWorker.Result doWork() {
+
         timeStarted=System.currentTimeMillis();
         Log.d("REACHED STEPS","WORKER STARTING");
         sb=new StringBuilder();
@@ -42,7 +43,7 @@ public class stepCountWorker extends Worker implements SensorEventListener {
     }
     @Override
     public void onStopped() {
-        Log.d("WORKER ACCEL","STOPPING ACCEL");
+        Log.d("WORKER STEPS","STOPPING STEPS");
         //WorkManager.getInstance(getApplicationContext()).cancelWorkById(this.getId());
         sensorManager.unregisterListener(this);
         sb=null;
@@ -62,12 +63,13 @@ public class stepCountWorker extends Worker implements SensorEventListener {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            saveDataUtil.saveData(sb.toString(),getApplicationContext(),"steps.txt");
+            onStopped();
             //onStopped();
         }
         else if(executingTime>=SENSOR_EXECUTION_PERIOD)
         {
-            saveDataUtil.saveData(sb.toString(),getApplicationContext(),"steps.txt");
-            onStopped();
+
         }
 //        else if(sensorEvent.sensor.getType()==Sensor.TYPE_LIGHT)
 //        {
